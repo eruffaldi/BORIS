@@ -603,7 +603,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
         self.actionCheckStateEvents.setEnabled(flag)
-
+        self.actionRunEventOutside.setEnabled(flag)
 
         self.actionMedia_file_information.setEnabled(flagObs)
         self.actionMedia_file_information.setEnabled(self.playerType == VLC)
@@ -711,6 +711,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionEdit_event.triggered.connect(self.edit_event)
 
         self.actionCheckStateEvents.triggered.connect(self.check_state_events)
+        self.actionRunEventOutside.triggered.connect(self.run_event_outside)
 
         self.actionSelect_observations.triggered.connect(self.select_events_between_activated)
 
@@ -840,6 +841,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twEvents.addAction(separator2)
 
         self.twEvents.addAction(self.actionCheckStateEvents)
+        self.twEvents.addAction(self.actionRunEventOutside)
 
         separator2 = QAction(self)
         separator2.setSeparator(True)
@@ -2710,7 +2712,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.vboxlayout.insertLayout(1, self.video2layout)
 
+    def get_media_full_path(self):
+        if PLAYER1 not in self.pj[OBSERVATIONS][self.observationId][FILE]:
+            return None
 
+        if type(self.pj[OBSERVATIONS][self.observationId][FILE][PLAYER1]) != type([]):
+            return None
+
+        if not self.pj[OBSERVATIONS][self.observationId][FILE][PLAYER1]:
+            return None
+
+        for mediaFile in self.pj[OBSERVATIONS][self.observationId][FILE][PLAYER1]:
+            if os.path.isfile(mediaFile):
+                return mediaFile   
+        return None     
     def check_if_media_available(self):
         """
         check if every media available for observationId
@@ -6861,6 +6876,34 @@ item []:
 
                     self.writeEvent(event, newTime)
                     break
+
+    def run_event_outside(self):
+        if not self.observationId:
+            self.no_observation()
+            return
+
+        if self.twEvents.selectedItems():        
+            import os
+            row = self.twEvents.selectedItems()[0].row()
+            eventtime = self.pj[OBSERVATIONS][self.observationId][EVENTS][row][ 0 ]
+            print (row,self.get_media_full_path(),eventtime)
+            print (self.pj[OBSERVATIONS][self.observationId][EVENTS][row])
+
+            ex = os.environ["BORISEXTERNAL"]
+            fn = self.get_media_full_path()
+            args = [ex, "-f",os.path.abspath(fn),"--seekmsec",str(int(eventtime*1000)),*("--size 1 --track 1 --redetect 100").split(" ")]
+            if os.path.split(fn)[1].split("_")[0] in set(["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"]):
+                args.append("--flip")
+                args.append("2")
+            print (os.path.split(fn)[1].split("_")[0] )
+            print ("running",ex,"with",args,"in",os.path.split(ex)[0])
+            pid = subprocess.Popen(args,executable=ex,cwd=os.path.split(ex)[0])
+
+
+            # Extract Information:
+            #   videoname of current observation
+            #   timeinterval
+            #   custom execution
 
 
     def edit_event(self):
