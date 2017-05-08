@@ -1537,6 +1537,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.mapCreatorWindow.resize(640, 640)
         self.mapCreatorWindow.show()
 
+    def open_observation_by_id(self,id):
+        self.observationId = id
+
+        # load events in table widget
+        self.loadEventsInTW(self.observationId)
+
+        if self.pj[OBSERVATIONS][self.observationId][TYPE] == LIVE:
+            self.playerType = LIVE
+            self.initialize_new_live_observation()
+
+        if self.pj[OBSERVATIONS][self.observationId][TYPE] in [MEDIA]:
+
+            if not self.initialize_new_observation_vlc():
+                self.observationId = ""
+                self.twEvents.setRowCount(0)
+                self.menu_options()
+                return
+
+        self.menu_options()
+        # title of dock widget  “  ”
+        self.dwObservations.setWindowTitle("Events for “{}” observation".format(self.observationId))        
 
     def open_observation(self):
         """
@@ -1554,27 +1575,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         result, selectedObs = self.selectObservations(OPEN)
 
         if selectedObs:
-            self.observationId = selectedObs[0]
-
-            # load events in table widget
-            self.loadEventsInTW(self.observationId)
-
-            if self.pj[OBSERVATIONS][self.observationId][TYPE] == LIVE:
-                self.playerType = LIVE
-                self.initialize_new_live_observation()
-
-            if self.pj[OBSERVATIONS][self.observationId][TYPE] in [MEDIA]:
-
-                if not self.initialize_new_observation_vlc():
-                    self.observationId = ""
-                    self.twEvents.setRowCount(0)
-                    self.menu_options()
-                    return
-
-            self.menu_options()
-            # title of dock widget  “  ”
-            self.dwObservations.setWindowTitle("Events for “{}” observation".format(self.observationId))
-
+            self.open_observation(selectedObs[0])
 
     def edit_observation(self):
         """
@@ -9246,6 +9247,9 @@ if __name__=="__main__":
     if args:
         logging.debug("args[0]: " + os.path.abspath(args[0]))
         window.open_project_json(os.path.abspath(args[0]))
+        if len(args) > 1:
+            logging.debug("opening observation args[1]: " + args[1])
+            window.open_observation_by_id(args[1])
 
     window.show()
     window.raise_()
