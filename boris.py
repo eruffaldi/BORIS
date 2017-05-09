@@ -6884,20 +6884,29 @@ item []:
 
         if self.twEvents.selectedItems():        
             import os
-            row = self.twEvents.selectedItems()[0].row()
-            eventtime = self.pj[OBSERVATIONS][self.observationId][EVENTS][row][ 0 ]
-            print (row,self.get_media_full_path(),eventtime)
-            print (self.pj[OBSERVATIONS][self.observationId][EVENTS][row])
+            rowS = self.twEvents.selectedItems()[0].row()
+            rowE = self.twEvents.selectedItems()[-1].row()
+            eventtimeS = self.pj[OBSERVATIONS][self.observationId][EVENTS][rowS][ 0 ]
+            eventtimeE = self.pj[OBSERVATIONS][self.observationId][EVENTS][rowE][ 0 ]
+            print (rowS,self.get_media_full_path(),eventtimeS)
+            print (self.pj[OBSERVATIONS][self.observationId][EVENTS][rowS])
+            print (rowE,self.get_media_full_path(),eventtimeE)
+            print (self.pj[OBSERVATIONS][self.observationId][EVENTS][rowE])
 
             ex = os.environ["BORISEXTERNAL"]
             fn = self.get_media_full_path()
-            args = [ex, "-f",os.path.abspath(fn),"--seekmsec",str(int(eventtime*1000)),*("--size 1 --track 1 --redetect 100").split(" ")]
+            if eventtimeS == eventtimeE:
+                q = []
+            else:
+                durationsec = eventtimeE-eventtimeS
+                q = ["--durationmsec",str(int(durationsec*1000))]
+            args = [ex, "-f",os.path.abspath(fn),"--seekmsec",str(int(eventtimeS*1000)),*q,*("--size 1 --track 1 --redetect 100").split(" ")]
             if os.path.split(fn)[1].split("_")[0] in set(["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"]):
                 args.append("--flip")
                 args.append("2")
             print (os.path.split(fn)[1].split("_")[0] )
             print ("running",ex,"with",args,"in",os.path.split(ex)[0])
-            pid = subprocess.Popen(args,executable=ex,cwd=os.path.split(ex)[0])
+            #pid = subprocess.Popen(args,executable=ex,cwd=os.path.split(ex)[0])
 
 
             # Extract Information:
